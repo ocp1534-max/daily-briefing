@@ -14,9 +14,9 @@
 body{margin:0;background:#F5F5F5;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Malgun Gothic',Arial,sans-serif;color:#111}
 .app{max-width:480px;margin:0 auto;min-height:100vh;background:#fff}
 .headwrap{background:#fff}
-.herobox{padding:0 12px 14px}
+.herobox{padding:12px 12px 14px}
 .herobox:empty{display:none}
-.top{display:flex;justify-content:space-between;align-items:center;padding:12px 16px}
+.top{display:flex;justify-content:space-between;align-items:center;padding:12px 16px;border-bottom:1px solid #EBEBEB}
 .top b{font-size:15px;font-weight:600;display:block}
 .top small{font-size:11px;color:#999}
 .sync{background:#F5F5F5;color:#888;font-size:11px;padding:4px 9px;border-radius:6px;border:0;font-family:inherit}
@@ -163,9 +163,7 @@ button.sync{cursor:pointer}
     var L = d.labels;
     tr.textContent = '';
     var sync = el('span', 'sync', d.time + ' 기준');
-    var rf = el('button', 'sync', '새로고침'); rf.onclick = function () { start(); };
-    tr.style.cssText = 'display:flex;gap:6px';
-    tr.appendChild(sync); tr.appendChild(rf);
+    tr.appendChild(sync);
 
     var pending = d.today.filter(function (x) { return !x.done; });
     var finished = d.today.filter(function (x) { return x.done; });
@@ -204,7 +202,7 @@ button.sync{cursor:pointer}
       view.appendChild(w);
     }
     var foot = el('div', 'foot', '갱신 ' + d.generated + ' · ');
-    var a = el('a', '', '저장된 비밀번호 지우기');
+    var a = el('a', '', '로그아웃');
     a.onclick = function () { store(PW_KEY, null); showLock(''); };
     foot.appendChild(a); view.appendChild(foot);
   }
