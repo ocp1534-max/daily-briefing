@@ -39,10 +39,6 @@ button.sync{cursor:pointer}
 .t{font-size:13px;line-height:1.45;flex:1;min-width:0;word-break:break-word}
 .chip{font-size:11px;font-weight:600;padding:2px 7px;border-radius:5px;white-space:nowrap}
 .dn .t{color:#AAA;text-decoration:line-through}
-.cd.lk{cursor:pointer}
-.cd.lk:hover{border-color:#EF9F27}
-.go{color:#BBB;font-size:18px;line-height:1}
-.toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%);background:#333;color:#fff;font-size:13px;padding:10px 16px;border-radius:10px;max-width:90%;text-align:center;z-index:9}
 .none{color:#999;font-size:13px}
 .warn{background:#F2F3F5;color:#555;border-radius:10px;padding:9px 12px;margin-top:14px;font-size:12px;line-height:1.6}
 .foot{text-align:center;font-size:11px;color:#AAA;margin:18px 0 6px}
@@ -112,17 +108,6 @@ button.sync{cursor:pointer}
     try { return await decrypt(file, pw); } catch (e) { throw new Error('password'); }
   }
 
-  var MOBILE = /Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent);
-  function toast(msg) {
-    var t = el('div', 'toast', msg);
-    document.body.appendChild(t);
-    setTimeout(function () { t.remove(); }, 3500);
-  }
-  function openMail(id) {
-    if (MOBILE) { toast('이 메일은 PC의 Outlook에서만 열 수 있습니다.'); return; }
-    location.href = 'outlook:' + id;
-  }
-
   function showLock(msg) {
     tr.textContent = '';
     heroBox.textContent = '';
@@ -165,11 +150,10 @@ button.sync{cursor:pointer}
     frag.appendChild(head);
     if (!items.length) frag.appendChild(el('div', 'cd none', labels.none));
     items.forEach(function (it) {
-      var row = el('div', (it.done ? 'cd dn' : 'cd') + (it.mailId ? ' lk' : ''));
+      var row = el('div', it.done ? 'cd dn' : 'cd');
       row.appendChild(chip(it.badge, it.tone));
       row.appendChild(el('div', 't', it.text));
       if (it.repeat) row.appendChild(chip(labels.repeat, 'gray'));
-      if (it.mailId) { row.appendChild(el('span', 'go', '›')); row.onclick = function () { openMail(it.mailId); }; }
       frag.appendChild(row);
     });
     return frag;
@@ -208,8 +192,8 @@ button.sync{cursor:pointer}
       return { badge: x.date, tone: 'red', text: x.text, repeat: x.repeat };
     }), L, { note: L.note }));
     view.appendChild(section('orange', L.mail, d.mails.map(function (x) {
-      return { badge: x.badge, tone: 'orange', text: x.subject, mailId: x.id };
-    }), L, { right: d.mails.length ? '누르면 Outlook에서 열림 (PC)' : '' }));
+      return { badge: x.badge, tone: 'orange', text: x.subject };
+    }), L, {}));
     var todo = pending.map(function (x) { return { badge: L.wait, tone: 'green', text: x.text, repeat: x.repeat }; })
       .concat(finished.map(function (x) { return { badge: L.done, tone: 'done', text: x.text, repeat: x.repeat, done: true }; }));
     view.appendChild(section('green', L.today, todo, L, { right: finished.length ? L.done + ' ' + finished.length + '건' : '' }));
