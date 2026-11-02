@@ -50,6 +50,17 @@ button.sync{cursor:pointer}
 .lock input{width:100%;border:1px solid #D0D0D0;border-radius:8px;padding:11px 12px;font-size:16px;font-family:inherit}
 .lock button{width:100%;margin-top:10px;background:#1D9E75;color:#fff;border:0;border-radius:8px;padding:11px;font-size:15px;font-weight:600;font-family:inherit;cursor:pointer}
 .err{color:#B33025;font-size:12px;min-height:18px;margin-top:10px}
+.kp.four .k{flex-direction:column;justify-content:center;align-items:center;gap:1px;padding:6px 2px;font-size:11px;white-space:nowrap}
+.cd.go{cursor:pointer}
+.chev{color:#BBB;font-size:16px;line-height:1.2;align-self:center}
+.cnt{font-size:12px;font-weight:700;color:#555;white-space:nowrap}
+.br{display:flex;flex-wrap:wrap;gap:3px;margin-top:5px}
+.br .chip{font-size:10px;padding:1px 5px}
+.t small{display:block;font-size:12px;color:#777;margin-top:2px}
+.back{display:inline-block;font-size:14px;font-weight:600;color:#1F5A99;cursor:pointer;margin:6px 2px 0}
+.ex{border-top:1px solid #F0F0F0;margin-top:8px;padding-top:6px}
+.exr{display:flex;gap:7px;align-items:center;padding:4px 0;font-size:12px}
+.exr .chip{min-width:46px;text-align:center}
 </style>
 </head>
 <body>
@@ -68,10 +79,12 @@ button.sync{cursor:pointer}
     orange: ['#FEF3E2', '#EF9F27', '#905A08'],
     green: ['#EAF5DE', '#C0DD97', '#3A7A10'],
     done: ['#F1F5F0', '#D5E3CF', '#7C9A70'],
-    gray: ['#F5F5F5', '#EBEBEB', '#888']
+    gray: ['#F5F5F5', '#EBEBEB', '#888'],
+    blue: ['#E8F1FB', '#9CC4EE', '#1F5A99']
   };
   var view = document.getElementById('view'), tr = document.getElementById('tr');
   var heroBox = document.getElementById('herobox');
+  var DATA = null;
 
   function el(tag, cls, text, style) {
     var e = document.createElement(tag);
@@ -129,7 +142,8 @@ button.sync{cursor:pointer}
       try {
         var data = await open(inp.value);
         store(PW_KEY, inp.value);
-        showMain(data);
+        DATA = data;
+        route();
       } catch (e) {
         btn.disabled = false;
         err.textContent = e.message === 'password' ? '비밀번호가 맞지 않습니다.' : '데이터를 불러오지 못했습니다. 잠시 후 다시 시도하세요.';
@@ -159,6 +173,95 @@ button.sync{cursor:pointer}
     return frag;
   }
 
+  function issues(list) { return list.filter(function (x) { return x.issue; }).length; }
+
+  function monHead(title, note, n, L) {
+    var head = el('div', 'sh', null, 'color:' + TONE.blue[2]);
+    var left = el('span', '', title);
+    left.appendChild(el('em', '', ' · ' + note));
+    head.appendChild(left);
+    head.appendChild(el('em', '', n ? L.issue.replace('{n}', n) : L.ok));
+    return head;
+  }
+
+  function noticeSection(d) {
+    var frag = document.createDocumentFragment(), L = d.labels;
+    frag.appendChild(monHead(L.notice, Number(d.date.slice(5, 7)) + '월', issues(d.notices), L));
+    if (!d.notices.length) frag.appendChild(el('div', 'cd none', L.none));
+    d.notices.forEach(function (n) {
+      var row = el('div', 'cd go');
+      row.appendChild(chip(n.badge, n.tone));
+      row.appendChild(el('div', 't', n.text));
+      row.appendChild(el('div', 'chev', '›'));
+      row.onclick = function () { location.hash = '#notice'; };
+      frag.appendChild(row);
+    });
+    return frag;
+  }
+
+  function branchSection(d) {
+    var frag = document.createDocumentFragment(), L = d.labels;
+    frag.appendChild(monHead(L.branch, Number(d.date.slice(5, 7)) + '월 누적', issues(d.branch), L));
+    if (!d.branch.length) frag.appendChild(el('div', 'cd none', L.none));
+    d.branch.forEach(function (b) {
+      var row = el('div', 'cd', null, 'align-items:flex-start');
+      row.appendChild(chip(b.badge, b.tone));
+      var t = el('div', 't', b.title);
+      t.appendChild(el('small', '', b.sub));
+      if (b.branches) {
+        var br = el('div', 'br');
+        b.branches.forEach(function (x) { br.appendChild(chip(x.code, x.ok ? 'done' : 'red')); });
+        t.appendChild(br);
+      }
+      row.appendChild(t);
+      row.appendChild(el('div', 'cnt', b.count));
+      frag.appendChild(row);
+    });
+    return frag;
+  }
+
+  function showNotice(d) {
+    var L = d.labels;
+    tr.textContent = '';
+    tr.appendChild(el('span', 'sync', d.time + ' 기준'));
+    heroBox.textContent = '';
+    view.textContent = '';
+    var back = el('a', 'back', '‹ ' + L.notice);
+    back.onclick = function () { location.hash = ''; };
+    view.appendChild(back);
+    d.notices.forEach(function (n) {
+      var card = el('div', 'cd', null, 'display:block;margin-top:8px');
+      var head = el('div', '', null, 'display:flex;gap:8px;align-items:flex-start');
+      head.appendChild(chip(n.badge, n.tone));
+      var t = el('div', 't', n.name);
+      t.appendChild(el('small', '', n.line));
+      head.appendChild(t);
+      card.appendChild(head);
+      if (n.excluded.length) {
+        var ex = el('div', 'ex');
+        ex.appendChild(el('div', '', '제외된 대상 ' + n.excluded.length + '명', 'font-size:11px;font-weight:600;color:#B33025;margin-bottom:2px'));
+        n.excluded.forEach(function (x) {
+          var r = el('div', 'exr');
+          r.appendChild(chip(x.branch || '-', 'gray'));
+          var w = el('div', 't', x.name || x.addr);
+          if (x.name) w.appendChild(el('small', '', x.addr));
+          r.appendChild(w);
+          r.appendChild(el('span', '', x.reason, 'color:#B33025;font-size:11px;font-weight:600'));
+          ex.appendChild(r);
+        });
+        card.appendChild(ex);
+      }
+      view.appendChild(card);
+    });
+  }
+
+  function route() {
+    if (!DATA) return;
+    if (location.hash === '#notice' && DATA.notices) { showNotice(DATA); window.scrollTo(0, 0); }
+    else showMain(DATA);
+  }
+  window.addEventListener('hashchange', route);
+
   function showMain(d) {
     var L = d.labels;
     tr.textContent = '';
@@ -167,7 +270,9 @@ button.sync{cursor:pointer}
 
     var pending = d.today.filter(function (x) { return !x.done; });
     var finished = d.today.filter(function (x) { return x.done; });
-    var total = d.overdue.length + d.mails.length + pending.length;
+    var hasMon = !!(d.notices || d.branch);
+    var nIssue = issues(d.notices || []), bIssue = issues(d.branch || []);
+    var total = d.overdue.length + d.mails.length + pending.length + nIssue + bIssue;
 
     view.textContent = '';
     heroBox.textContent = '';
@@ -178,7 +283,11 @@ button.sync{cursor:pointer}
     var tot = el('div', 'tot'); tot.appendChild(el('i', '', '처리 대기')); tot.appendChild(el('b', '', total + '건'));
     row.appendChild(tot); hero.appendChild(row);
     var kp = el('div', 'kp');
-    [['red', L.overdue, d.overdue.length], ['orange', L.mail, d.mails.length], ['green', L.today, pending.length]].forEach(function (k) {
+    var boxes = [['red', L.overdue, d.overdue.length], ['orange', L.mail, d.mails.length], ['green', L.today, pending.length]];
+    if (hasMon) boxes.push(['blue', L.monitor, nIssue + bIssue]);
+    kp.style.gridTemplateColumns = 'repeat(' + boxes.length + ',minmax(0,1fr))';
+    if (boxes.length > 3) kp.className = 'kp four';
+    boxes.forEach(function (k) {
       var t = TONE[k[0]];
       var box = el('div', 'k', k[1], 'background:' + t[0] + ';border:1px solid ' + t[1] + ';color:' + t[2]);
       box.appendChild(el('span', '', String(k[2])));
@@ -195,6 +304,8 @@ button.sync{cursor:pointer}
     var todo = pending.map(function (x) { return { badge: L.wait, tone: 'green', text: x.text, repeat: x.repeat }; })
       .concat(finished.map(function (x) { return { badge: L.done, tone: 'done', text: x.text, repeat: x.repeat, done: true }; }));
     view.appendChild(section('green', L.today, todo, L, { right: finished.length ? L.done + ' ' + finished.length + '건' : '' }));
+    if (d.notices) view.appendChild(noticeSection(d));
+    if (d.branch) view.appendChild(branchSection(d));
 
     if (d.warnings && d.warnings.length) {
       var w = el('div', 'warn');
@@ -210,7 +321,7 @@ button.sync{cursor:pointer}
   async function start() {
     var pw = stored(PW_KEY);
     if (!pw) { showLock(''); return; }
-    try { showMain(await open(pw)); }
+    try { DATA = await open(pw); route(); }
     catch (e) { showLock(e.message === 'password' ? '저장된 비밀번호가 바뀌었습니다. 다시 입력하세요.' : '데이터를 불러오지 못했습니다. 잠시 후 다시 시도하세요.'); }
   }
   start();
